@@ -37,15 +37,16 @@ const App = () => {
               setPersons(persons.filter((person) => person.id !== id));
             }
           })
-          .catch((error) => {
-            setNotificationType("error")
-            setMessage(`${name} has already been removed from the server`)
-            setPersons(persons.filter((person) => person.id !== id));
-            setTimeout(() => {
-              setMessage(null)
-            }, 3000)
+          .catch((err) => {
+            setNotificationType("error");
+            setMessage(
+              `Information of ${name} has already been removed from the server`
+            );
           })
       : console.log();
+    setTimeout(() => {
+      setMessage(null);
+    }, 3000);
   };
   const filtered = persons
     ? persons.filter((person) =>
@@ -61,10 +62,11 @@ const App = () => {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    const person = persons.find(
+    const duplicatePersons = persons.filter(
       (person) => person.name.toLowerCase() === newName.toLowerCase()
     );
-    if (person) {
+    if (duplicatePersons.length) {
+      const person = duplicatePersons[0];
       window.confirm(
         `${newName} is already added to phonebook, replace the old number with a new one?`
       )
@@ -74,31 +76,32 @@ const App = () => {
               setPersons(
                 persons.map((person) => (person.id !== res.id ? person : res))
               );
-              setNotificationType("success")
-              setMessage(`Changed ${res.name} to ${res.number}`);
-              setTimeout(() => {
-                setMessage(null);
-              }, 3000);
+              setNotificationType("success");
+              setMessage(`Changed ${person.name}`);
             })
         : console.log();
     } else {
       personService
         .create({
-          name: newName,
-          number: newNumber,
+          name: newName.trim(),
+          number: newNumber.trim(),
         })
         .then((person) => {
           setPersons([...persons, person]);
-          setNotificationType("success")
+          setNotificationType("success");
           setMessage(`Added ${person.name}`);
-          setTimeout(() => {
-            setMessage(null);
-          }, 3000);
+        })
+        .catch((err) => {
+          setNotificationType("error");
+          setMessage(`${err.response.data.error}`);
         });
     }
-
     setNewName("");
     setNewNumber("");
+
+    setTimeout(() => {
+      setMessage(null);
+    }, 3000);
   };
   return (
     <div>
