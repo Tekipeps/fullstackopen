@@ -3,13 +3,7 @@ import personService from "./services/personService";
 import Filter from "./components/Filter";
 import PersonForm from "./components/PersonForm";
 import Persons from "./components/Persons";
-
-const Notification = ({ message, type }) => {
-  if (message === null) {
-    return null;
-  }
-  return <div className={type}>{message}</div>;
-};
+import Notification from "./components/Notification";
 
 const App = () => {
   const [persons, setPersons] = useState(null);
@@ -28,25 +22,25 @@ const App = () => {
   const handFilterChange = (event) => {
     setNewFilter(event.target.value);
   };
-  const handleDelete = (id, name) => {
-    window.confirm(`delete ${name}?`)
-      ? personService
-          .remove(id)
-          .then((res) => {
-            if (res.status === 200) {
-              setPersons(persons.filter((person) => person.id !== id));
-            }
-          })
-          .catch((err) => {
-            setNotificationType("error");
-            setMessage(
-              `Information of ${name} has already been removed from the server`
-            );
-          })
-      : console.log();
+  const handleDelete = (person) => {
+    const confirm = window.confirm(`delete ${person.name}?`);
+    if (confirm) {
+      personService
+        .remove(person.id)
+        .then((res) => {
+          setPersons(persons.filter((p) => p.id !== person.id));
+        })
+        .catch((err) => {
+          setNotificationType("error");
+          setMessage(
+            `Information of ${person.name} has already been removed from the server`
+          );
+          setPersons(persons.filter((p) => p.id !== person.id));
+        });
+    }
     setTimeout(() => {
       setMessage(null);
-    }, 3000);
+    }, 4000);
   };
   const filtered = persons
     ? persons.filter((person) =>
@@ -62,24 +56,25 @@ const App = () => {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    const duplicatePersons = persons.filter(
+    const duplicatePerson = persons.find(
       (person) => person.name.toLowerCase() === newName.toLowerCase()
     );
-    if (duplicatePersons.length) {
-      const person = duplicatePersons[0];
-      window.confirm(
+    if (duplicatePerson) {
+      const choice = window.confirm(
         `${newName} is already added to phonebook, replace the old number with a new one?`
-      )
-        ? personService
-            .update(person.id, { name: newName, number: newNumber })
-            .then((res) => {
-              setPersons(
-                persons.map((person) => (person.id !== res.id ? person : res))
-              );
-              setNotificationType("success");
-              setMessage(`Changed ${person.name}`);
-            })
-        : console.log();
+      );
+      if (choice) {
+        personService
+          .update(duplicatePerson.id, { name: newName, number: newNumber })
+          .then((res) => {
+            setPersons(
+              persons.map((person) => (person.id !== res.id ? person : res))
+            );
+            setNotificationType("success");
+            setMessage(`Changed ${duplicatePerson.name}`);
+          })
+          .catch((err) => console.log(err));
+      }
     } else {
       personService
         .create({
@@ -101,7 +96,7 @@ const App = () => {
 
     setTimeout(() => {
       setMessage(null);
-    }, 3000);
+    }, 4000);
   };
   return (
     <div>
